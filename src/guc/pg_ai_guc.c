@@ -15,10 +15,11 @@ PgAiStringGUCs pg_ai_str_gucs[] = {
 	{PG_AI_GUC_API_KEY, PG_AI_GUC_API_KEY_DESCRIPTION},
 	{PG_AI_GUC_MODEL, PG_AI_GUC_MODEL_DESCRIPTION},
 	{PG_AI_GUC_SERVICE, PG_AI_GUC_SERVICE_DESCRIPTION},
-	{PG_AI_GUC_VEC_SIMILARITY_ALGO, PG_AI_GUC_VEC_SIMILARITY_ALGO_DESC}};
+	{PG_AI_GUC_VEC_SIMILARITY_ALGO, PG_AI_GUC_VEC_SIMILARITY_ALGO_DESC},
+	{PG_AI_GUC_BASE_URL, PG_AI_GUC_BASE_URL_DESCRIPTION}};
 
 /* the values array should be in sync with the above definition array */
-static char *pg_ai_str_guc_values[] = {NULL, NULL, NULL, NULL};
+static char *pg_ai_str_guc_values[] = {NULL, NULL, NULL, NULL, NULL};
 
 /* GUCs that accept a integer values */
 typedef struct PgAiIntGUCs

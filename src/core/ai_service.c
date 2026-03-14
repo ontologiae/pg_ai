@@ -86,17 +86,47 @@ static void set_common_options(AIService *ai_service, const char *service_name,
 							   const char *model_name, const char *model_url)
 {
 	char *api_key;
+	char *base_url;
 	int *debug_level;
 
+	/* Set service and model names */
 	set_option_value(AI_SERVICE_OPTIONS, OPTION_SERVICE_NAME, service_name,
 					 false /* concat */);
 	set_option_value(AI_SERVICE_OPTIONS, OPTION_MODEL_NAME, model_name,
 					 false /* concat */);
-	set_option_value(AI_SERVICE_OPTIONS, OPTION_ENDPOINT_URL, model_url,
-					 false /* concat */);
+
+	/* Check if a custom base_url is defined in GUC - if so, use it instead of default */
+	base_url = get_pg_ai_guc_string_variable(PG_AI_GUC_BASE_URL);
+	
+	/* DEBUG: Log the GUC values */
+	ereport(INFO, (errmsg("[PG_AI_DEBUG] Checking pg_ai.base_url GUC")));
+	ereport(INFO, (errmsg("[PG_AI_DEBUG] base_url from GUC: %s",
+						  base_url ? base_url : "(NULL)")));
+	ereport(INFO, (errmsg("[PG_AI_DEBUG] model_url (default): %s", model_url)));
+	
+	if (base_url && strlen(base_url) > 0)
+	{
+		/* Use the custom base_url to override the default model_url */
+		ereport(INFO, (errmsg("[PG_AI_DEBUG] Using CUSTOM base_url: %s", base_url)));
+		set_option_value(AI_SERVICE_OPTIONS, OPTION_ENDPOINT_URL, base_url,
+						 false /* concat */);
+	}
+	else
+	{
+		/* Use the default URL from the model configuration */
+		ereport(INFO, (errmsg("[PG_AI_DEBUG] Using DEFAULT model_url: %s", model_url)));
+		set_option_value(AI_SERVICE_OPTIONS, OPTION_ENDPOINT_URL, model_url,
+						 false /* concat */);
+	}
+
+	/* Verify what was actually set */
+	ereport(INFO, (errmsg("[PG_AI_DEBUG] Final OPTION_ENDPOINT_URL: %s",
+						  get_option_value(AI_SERVICE_OPTIONS, OPTION_ENDPOINT_URL))));
 
 	/* set the API key if it is available in a GUC */
 	api_key = get_pg_ai_guc_string_variable(PG_AI_GUC_API_KEY);
+	ereport(INFO, (errmsg("[PG_AI_DEBUG] api_key from GUC: %s",
+						  api_key ? "****" : "(NULL)")));
 	if (api_key)
 		set_option_value(AI_SERVICE_OPTIONS, OPTION_SERVICE_API_KEY, api_key,
 						 false /* concat */);
@@ -104,6 +134,8 @@ static void set_common_options(AIService *ai_service, const char *service_name,
 	/* set the debug level if it is available in a GUC */
 	if ((debug_level = get_pg_ai_guc_int_variable(PG_AI_GUC_DEBUG_LEVEL)))
 		ai_service->debug_level = *debug_level;
+	
+	ereport(INFO, (errmsg("[PG_AI_DEBUG] debug_level: %d", ai_service->debug_level)));
 }
 
 /*

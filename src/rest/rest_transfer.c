@@ -123,10 +123,18 @@ static int debug_curl(CURL *curl, curl_infotype type, char *data, size_t size,
 static void make_curl_headers(CURL *curl, AIService *ai_service)
 {
 	struct curl_slist *headers = NULL;
+	char *endpoint_url;
+	
+	/* get the URL from options */
+	endpoint_url = get_option_value(ai_service->service_data->options,
+									OPTION_ENDPOINT_URL);
+	
+	/* DEBUG: Log the URL being used for CURL */
+	ereport(INFO, (errmsg("[PG_AI_DEBUG] CURL will use URL: %s",
+						  endpoint_url ? endpoint_url : "(NULL)")));
+	
 	/* set the URL */
-	curl_easy_setopt(curl, CURLOPT_URL,
-					 get_option_value(ai_service->service_data->options,
-									  OPTION_ENDPOINT_URL));
+	curl_easy_setopt(curl, CURLOPT_URL, endpoint_url);
 	ai_service->add_rest_headers(curl, &headers, ai_service);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 }
@@ -155,6 +163,10 @@ void rest_transfer(AIService *ai_service)
 	char error_msg[ERROR_MSG_LEN];
 	size_t max_word_count;
 
+	ereport(INFO, (errmsg("[PG_AI_DEBUG] ===== REST TRANSFER STARTED =====")));
+	ereport(INFO, (errmsg("[PG_AI_DEBUG] Request data size: %zu bytes",
+						  ai_service->rest_request->data_size)));
+
 	/* TODO check for the size dynamically even before the trasfer is called */
 	if (vaildate_data_size(ai_service->rest_request->data, &max_word_count))
 	{
@@ -162,12 +174,15 @@ void rest_transfer(AIService *ai_service)
 		sprintf(error_msg, GET_ERR_STR(DATA_TOO_BIG), max_word_count);
 		strcpy(ai_service->rest_response->data, error_msg);
 		ai_service->rest_response->data_size = strlen(error_msg);
+		ereport(INFO, (errmsg("[PG_AI_DEBUG] Request data too big, max %zu words", max_word_count)));
 		return;
 	}
 
 	curl = curl_easy_init();
 	if (curl)
 	{
+		ereport(INFO, (errmsg("[PG_AI_DEBUG] CURL initialized successfully")));
+		
 		/* set function to print curl request/response */
 		curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, debug_curl);
 		/* CURLOPT_DEBUGFUNCTION has no effect if CURLOPT_VERBOSE is not set */
@@ -192,11 +207,13 @@ void rest_transfer(AIService *ai_service)
 		curl_free(encoded_prompt);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
 
+		ereport(INFO, (errmsg("[PG_AI_DEBUG] Executing CURL request...")));
+		
 		/* the actual REST data transfer */
 		res = curl_easy_perform(curl);
 		if (res != CURLE_OK)
 		{
-			ereport(INFO, (errmsg("CURL ERROR: %d : %s\n\n", res,
+			ereport(INFO, (errmsg("[PG_AI_DEBUG] CURL ERROR: %d : %s", res,
 								  curl_easy_strerror(res))));
 			ai_service->rest_response->response_code = 0x1;
 			strcpy(ai_service->rest_response->data, GET_ERR_STR(TRANSFER_FAIL));
@@ -207,7 +224,16 @@ void rest_transfer(AIService *ai_service)
 		{
 			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE,
 							  &ai_service->rest_response->response_code);
+			ereport(INFO, (errmsg("[PG_AI_DEBUG] CURL request successful, HTTP code: %ld",
+								  ai_service->rest_response->response_code)));
+			ereport(INFO, (errmsg("[PG_AI_DEBUG] Response data size: %zu bytes",
+								  ai_service->rest_response->data_size)));
 		}
 		curl_easy_cleanup(curl);
+		ereport(INFO, (errmsg("[PG_AI_DEBUG] ===== REST TRANSFER COMPLETED =====")));
+	}
+	else
+	{
+		ereport(INFO, (errmsg("[PG_AI_DEBUG] Failed to initialize CURL")));
 	}
 }

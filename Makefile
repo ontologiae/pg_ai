@@ -27,6 +27,6 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR) $(OBJDIRS)
 $(OBJDIR) $(OBJDIRS):
 	mkdir -p $@
 
-PG_CONFIG = pg_config
+PG_CONFIG = /usr/lib/postgresql/17/bin/pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)

@@ -13,6 +13,9 @@
 
 #define PG_AI_GUC_VEC_SIMILARITY_ALGO "pg_ai.similarity_algorithm"
 #define PG_AI_GUC_VEC_SIMILARITY_ALGO_DESC "Vector similarity algorithm"
+
+#define PG_AI_GUC_BASE_URL "pg_ai.base_url"
+#define PG_AI_GUC_BASE_URL_DESCRIPTION "Base URL for AI Service API (overrides default)"
 /* ------ string gucs >8----------------------- */
 
 /* ------8< integer gucs ----------------------- */
