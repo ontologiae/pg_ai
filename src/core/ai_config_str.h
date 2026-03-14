@@ -36,12 +36,6 @@
 	"                       '<prompt agg> eg: Choose a topic for the "         \
 	"following:')\n"
 
-#define MODERATION_FUNCTIONS                                                   \
-	"\nFunctions:\n"                                                           \
-	"(i) pg_ai_moderation(<column_name>, <prompt: additional text>)  \n\n"     \
-	"(ii) pg_ai_moderation_agg(<column_name>, <promptagg: additional text>) "  \
-	"\n"
-
 #define EMBEDDING_FUNCTIONS                                                    \
 	"\nFunctions:\n"                                                           \
 	"(i) pg_ai_create_vector_store(store => '<new store name>', \n"            \

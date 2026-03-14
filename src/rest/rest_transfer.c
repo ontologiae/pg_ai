@@ -130,7 +130,7 @@ static void make_curl_headers(CURL *curl, AIService *ai_service)
 									OPTION_ENDPOINT_URL);
 	
 	/* DEBUG: Log the URL being used for CURL */
-	ereport(INFO, (errmsg("[PG_AI_DEBUG] CURL will use URL: %s",
+	ereport(NOTICE, (errmsg("[PG_AI_DEBUG] CURL will use URL: %s",
 						  endpoint_url ? endpoint_url : "(NULL)")));
 	
 	/* set the URL */
@@ -163,8 +163,8 @@ void rest_transfer(AIService *ai_service)
 	char error_msg[ERROR_MSG_LEN];
 	size_t max_word_count;
 
-	ereport(INFO, (errmsg("[PG_AI_DEBUG] ===== REST TRANSFER STARTED =====")));
-	ereport(INFO, (errmsg("[PG_AI_DEBUG] Request data size: %zu bytes",
+	ereport(NOTICE, (errmsg("[PG_AI_DEBUG] ===== REST TRANSFER STARTED =====")));
+	ereport(NOTICE, (errmsg("[PG_AI_DEBUG] Request data size: %zu bytes",
 						  ai_service->rest_request->data_size)));
 
 	/* TODO check for the size dynamically even before the trasfer is called */
@@ -174,14 +174,14 @@ void rest_transfer(AIService *ai_service)
 		sprintf(error_msg, GET_ERR_STR(DATA_TOO_BIG), max_word_count);
 		strcpy(ai_service->rest_response->data, error_msg);
 		ai_service->rest_response->data_size = strlen(error_msg);
-		ereport(INFO, (errmsg("[PG_AI_DEBUG] Request data too big, max %zu words", max_word_count)));
+		ereport(NOTICE, (errmsg("[PG_AI_DEBUG] Request data too big, max %zu words", max_word_count)));
 		return;
 	}
 
 	curl = curl_easy_init();
 	if (curl)
 	{
-		ereport(INFO, (errmsg("[PG_AI_DEBUG] CURL initialized successfully")));
+		ereport(NOTICE, (errmsg("[PG_AI_DEBUG] CURL initialized successfully")));
 		
 		/* set function to print curl request/response */
 		curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, debug_curl);
@@ -205,15 +205,19 @@ void rest_transfer(AIService *ai_service)
 		(ai_service->add_rest_data)(post_data, POST_DATA_SIZE, encoded_prompt,
 									sizeof(encoded_prompt));
 		curl_free(encoded_prompt);
+		
+		/* DEBUG: Log the JSON being sent */
+		ereport(NOTICE, (errmsg("[PG_AI_DEBUG] JSON POST data: %s", post_data)));
+		
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
 
-		ereport(INFO, (errmsg("[PG_AI_DEBUG] Executing CURL request...")));
+		ereport(NOTICE, (errmsg("[PG_AI_DEBUG] Executing CURL request...")));
 		
 		/* the actual REST data transfer */
 		res = curl_easy_perform(curl);
 		if (res != CURLE_OK)
 		{
-			ereport(INFO, (errmsg("[PG_AI_DEBUG] CURL ERROR: %d : %s", res,
+			ereport(NOTICE, (errmsg("[PG_AI_DEBUG] CURL ERROR: %d : %s", res,
 								  curl_easy_strerror(res))));
 			ai_service->rest_response->response_code = 0x1;
 			strcpy(ai_service->rest_response->data, GET_ERR_STR(TRANSFER_FAIL));
@@ -224,16 +228,29 @@ void rest_transfer(AIService *ai_service)
 		{
 			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE,
 							  &ai_service->rest_response->response_code);
-			ereport(INFO, (errmsg("[PG_AI_DEBUG] CURL request successful, HTTP code: %ld",
+			ereport(NOTICE, (errmsg("[PG_AI_DEBUG] CURL request successful, HTTP code: %ld",
 								  ai_service->rest_response->response_code)));
-			ereport(INFO, (errmsg("[PG_AI_DEBUG] Response data size: %zu bytes",
+			ereport(NOTICE, (errmsg("[PG_AI_DEBUG] Response data size: %zu bytes",
 								  ai_service->rest_response->data_size)));
+			
+			/* DEBUG: Log response JSON (first 500 chars to avoid flooding) */
+			if (ai_service->rest_response->data_size > 0)
+			{
+				char *response_data = (char *)ai_service->rest_response->data;
+				size_t log_size = ai_service->rest_response->data_size > 500 ? 500 : ai_service->rest_response->data_size;
+				char response_preview[501];
+				strncpy(response_preview, response_data, log_size);
+				response_preview[log_size] = '\0';
+				ereport(NOTICE, (errmsg("[PG_AI_DEBUG] Response JSON (first 500 chars): %s%s",
+									  response_preview,
+									  ai_service->rest_response->data_size > 500 ? "..." : "")));
+			}
 		}
 		curl_easy_cleanup(curl);
-		ereport(INFO, (errmsg("[PG_AI_DEBUG] ===== REST TRANSFER COMPLETED =====")));
+		ereport(NOTICE, (errmsg("[PG_AI_DEBUG] ===== REST TRANSFER COMPLETED =====")));
 	}
 	else
 	{
-		ereport(INFO, (errmsg("[PG_AI_DEBUG] Failed to initialize CURL")));
+		ereport(NOTICE, (errmsg("[PG_AI_DEBUG] Failed to initialize CURL")));
 	}
 }

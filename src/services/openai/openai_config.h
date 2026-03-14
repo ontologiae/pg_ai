@@ -33,34 +33,4 @@
 #define EMBEDDINGS_LIST_SIZE 1536
 /* ----------------- embeddings service >8---------- */
 
-/*--------------8< Image Gen service --------------*/
-#define MODEL_OPENAI_IMAGE_GEN_NAME "dall-e-3"
-#define MODEL_OPENAI_IMAGE_GEN_DESCRIPTION "OpenAI's text-to-image model"
-
-#define IMAGE_GEN_PROMPT "Make a picture of the following"
-#define IMAGE_GEN_AGG_PROMPT "Make a picture with the following"
-#define IMAGE_GEN_API_URL "https://api.openai.com/v1/images/generations"
-
-#define IMAGE_GEN_HELP                                                         \
-	"\nFunctions:\n"                                                           \
-	"(i)  pg_ai_generate_image(<column_name>,\n"                               \
-	"                           '<prompt> eg:Make a picture of the "           \
-	"following:')\n\n"                                                         \
-	"(ii) pg_ai_generate_image_agg(<column_name>,\n"                           \
-	"                      '<prompt agg> eg: Make a picture with the "         \
-	"following:')\n"
-/*-------------- Image Gen service >8--------------*/
-
-/* -----------------8< moderation service ---------- */
-/* "instruct" is better at answering pointed questions and "gpt" in general is
- * chatty */
-#define MODEL_OPENAI_MODERATION_NAME "text-moderation-latest"
-#define MODEL_OPENAI_MODERATION_DESCRIPTION                                    \
-	"Classifies input on harmful categories."
-
-#define MODERATION_API_URL "https://api.openai.com/v1/moderations"
-
-#define MODERATION_HELP MODERATION_FUNCTIONS
-/* -----------------moderation service >8---------- */
-
 #endif /* _OPENAI_CONFIG_H_ */

@@ -215,20 +215,20 @@ int gpt_add_rest_headers(CURL *curl, struct curl_slist **headers, void *service)
 	char key_header[128];
 	char *api_key;
 
-	ereport(INFO, (errmsg("[PG_AI_DEBUG] Adding REST headers for GPT service")));
+	ereport(NOTICE, (errmsg("[PG_AI_DEBUG] Adding REST headers for GPT service")));
 	
 	curl_headers =
 		curl_slist_append(curl_headers, "Content-Type: application/json");
 	
 	api_key = get_option_value(ai_service->service_data->options, OPTION_SERVICE_API_KEY);
-	ereport(INFO, (errmsg("[PG_AI_DEBUG] API key from options: %s",
+	ereport(NOTICE, (errmsg("[PG_AI_DEBUG] API key from options: %s",
 						  api_key ? (strlen(api_key) > 4 ? "****" : "(too short)") : "(NULL)")));
 	
 	snprintf(key_header, sizeof(key_header), "Authorization: Bearer %s", api_key);
 	curl_headers = curl_slist_append(curl_headers, key_header);
 	*headers = curl_headers;
 
-	ereport(INFO, (errmsg("[PG_AI_DEBUG] Headers added successfully")));
+	ereport(NOTICE, (errmsg("[PG_AI_DEBUG] Headers added successfully")));
 	
 	return RETURN_ZERO;
 }

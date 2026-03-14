@@ -77,22 +77,6 @@ SELECT pg_ai_query_vector_store(store => 'movies_vec_store_90s',
 SET pg_ai.similarity_algorithm='cosine'(default)|'euclidean'|'inner_product';
 ```
 
-#### Moderations
-
-Get the moderations for the column data.
-```sql
-SELECT col1, pg_ai_moderation(col1, NULL) FROM messages_table WHERE id=1;
-```
-
-Aggregate version of the above function.
-```sql
-SELECT pg_ai_moderation_agg(col1, NULL) FROM messages_table WHERE id<10;
-```
-
-#### More functions and supported models
-[Text to Image](README_image_gen.md)
-
-
 ### Help
 ```sql
 SELECT pg_ai_help();
@@ -104,9 +88,7 @@ Models in use.
 
 1. OpenAI - gpt-3.5-turbo-instruct
 2. OpenAI - text-embedding-ada-002
-3. OpenAI - text-moderation-stable
-4. OpenAI - dall-e-3
-5. Google AI- gemini-pro:generateContent
+3. Google AI- gemini-pro:generateContent
 
 ## TODO
 

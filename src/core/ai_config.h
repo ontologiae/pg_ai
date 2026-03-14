@@ -7,7 +7,6 @@
 #include "ai_config_str.h"
 #include "service_option.h"
 #include "services/openai/openai_config.h"
-#include "services/gemini/gemini_config.h"
 
 /*------------8< Services. Models, Functions ----------*/
 /* every supported service */
@@ -17,23 +16,16 @@
 /* models supported by OpenAI */
 #define MODEL_OPENAI_GPT 0x00000001
 #define MODEL_OPENAI_EMBEDDINGS 0x00000002
-#define MODEL_OPENAI_MODERATION 0x00000004
-#define MODEL_OPENAI_IMAGE_GEN 0x00000008
 
 /* models supported by Gemini */
 #define MODEL_GEMINI_GENC 0x00000001
-#define MODEL_GEMINI_GENC_MOD 0x00000002
 #define MODEL_GEMINI_EMBEDDINGS 0x00000004
 
 /* functions are common across services and models */
 #define FUNCTION_GET_INSIGHT 0x00000001
 #define FUNCTION_GET_INSIGHT_AGGREGATE 0x00000002
-#define FUNCTION_GENERATE_IMAGE 0x00000004
-#define FUNCTION_GENERATE_IMAGE_AGGREGATE 0x00000008
 #define FUNCTION_CREATE_VECTOR_STORE 0x00000010
 #define FUNCTION_QUERY_VECTOR_STORE 0x00000020
-#define FUNCTION_MODERATION 0x00000040
-#define FUNCTION_MODERATION_AGGREGATE 0x00000080
 /*------------ Services. Models, Functions >8----------*/
 
 #define MAX_BYTE_VALUE 255
