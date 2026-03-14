@@ -22,5 +22,7 @@ int gpt_add_rest_headers(CURL *curl, struct curl_slist **headers,
 						 void *service);
 void gpt_add_rest_data(char *buffer, const size_t maxlen, const char *data,
 					   const size_t len);
+void gpt_add_rest_data_chat(char *buffer, const size_t maxlen, const char *data,
+							const size_t len);
 
 #endif /* _SERVICE_GPT_H_ */

@@ -256,6 +256,85 @@ void gpt_add_rest_data(char *buffer, const size_t maxlen, const char *data,
 	generate_json(buffer, keys, values, data_types, 3);
 }
 
+
+/*
+ * Fonction pour échapper les caractères spéciaux JSON
+ * Échappe les guillemets, backslashes, et caractères de contrôle
+ */
+static void escape_json_string(char *dest, size_t dest_size, const char *src)
+{
+	size_t dest_pos = 0;
+	const char *src_pos = src;
+
+	while (*src_pos && dest_pos < dest_size - 1)
+	{
+		switch (*src_pos)
+		{
+		case '"':
+		case '\\':
+			if (dest_pos < dest_size - 2)
+			{
+				dest[dest_pos++] = '\\';
+				dest[dest_pos++] = *src_pos;
+			}
+			break;
+		case '\n':
+			if (dest_pos < dest_size - 2)
+			{
+				dest[dest_pos++] = '\\';
+				dest[dest_pos++] = 'n';
+			}
+			break;
+		case '\r':
+			if (dest_pos < dest_size - 2)
+			{
+				dest[dest_pos++] = '\\';
+				dest[dest_pos++] = 'r';
+			}
+			break;
+		case '\t':
+			if (dest_pos < dest_size - 2)
+			{
+				dest[dest_pos++] = '\\';
+				dest[dest_pos++] = 't';
+			}
+			break;
+		default:
+			if (*src_pos >= 32 || *src_pos == '\0')
+				dest[dest_pos++] = *src_pos;
+			break;
+		}
+		src_pos++;
+	}
+	dest[dest_pos] = '\0';
+}
+
+/*
+ * Construit le JSON au format Chat API (compatible OpenAI moderne et Groq)
+ * Format : {"model":"...", "messages":[{"role":"user","content":"..."}]}
+ */
+void gpt_add_rest_data_chat(char *buffer, const size_t maxlen, const char *data,
+							const size_t len)
+{
+	char escaped_content[POST_DATA_SIZE];
+	char *model_name;
+
+	/* Échapper le contenu pour JSON */
+	escape_json_string(escaped_content, POST_DATA_SIZE, data);
+
+	/* Le nom du modèle sera récupéré de la config (ou remplacé par celui du GUC) */
+	model_name = MODEL_OPENAI_GPT_NAME;
+
+	/* Construire le JSON au format Chat API */
+	snprintf(buffer, maxlen,
+			 "{\"model\":\"%s\",\"messages\":[{\"role\":\"user\",\"content\":\"%s\"}]}",
+			 model_name, escaped_content);
+
+	/* Logging du JSON envoyé en mode debug */
+	ereport(NOTICE, (errmsg("[PG_AI_DEBUG] JSON Request: %s", buffer)));
+}
+
+
 /*
  * Function to initiate the curl transfer and extract the response from
  * the json returned by the service.
@@ -264,6 +343,7 @@ void gpt_rest_transfer(void *service)
 {
 	Datum choices;
 	Datum first_choice;
+	Datum message_field;
 	Datum return_text;
 	AIService *ai_service;
 
@@ -272,30 +352,47 @@ void gpt_rest_transfer(void *service)
 	*((char *)(ai_service->rest_response->data) +
 	  ai_service->rest_response->data_size) = '\0';
 
+	/* Log la réponse brute en debug */
+	ereport(NOTICE, (errmsg("[PG_AI_DEBUG] JSON Response: %s",
+							(char *)(ai_service->rest_response->data))));
+
 	/*
-	response will be in the below format and we pick the text from the first
-	element of the choice array
-	{
-	  "choices": [
-		{
-		  "text": "The capital of France is Paris.",
-		  "index": 0,
-		  "logprobs": -4.079072952270508
-		}
-	  ]
-	}
-	*/
+	 * Format de réponse de l'API Chat (OpenAI moderne et Groq):
+	 * {
+	 *   "choices": [
+	 *     {
+	 *       "message": {
+	 *         "role": "assistant",
+	 *         "content": "The capital of France is Paris."
+	 *       },
+	 *       "index": 0,
+	 *       "finish_reason": "stop"
+	 *     }
+	 *   ]
+	 * }
+	 */
 	if (ai_service->rest_response->response_code == HTTP_OK)
 	{
+		/* Extraire le tableau choices */
 		choices = DirectFunctionCall2(
 			json_object_field_text,
 			CStringGetTextDatum((char *)(ai_service->rest_response->data)),
 			PointerGetDatum(cstring_to_text(RESPONSE_JSON_CHOICE)));
+
+		/* Extraire le premier choix */
 		first_choice = DirectFunctionCall2(json_array_element_text, choices,
 										   PointerGetDatum(0));
-		return_text = DirectFunctionCall2(
+
+		/* Extraire l'objet message */
+		message_field = DirectFunctionCall2(
 			json_object_field_text, first_choice,
+			PointerGetDatum(cstring_to_text(RESPONSE_JSON_MESSAGE)));
+
+		/* Extraire le champ content du message */
+		return_text = DirectFunctionCall2(
+			json_object_field_text, message_field,
 			PointerGetDatum(cstring_to_text(RESPONSE_JSON_KEY)));
+
 		strcpy(ai_service->service_data->response_data,
 			   text_to_cstring(DatumGetTextPP(return_text)));
 	}

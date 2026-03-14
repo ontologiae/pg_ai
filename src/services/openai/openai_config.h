@@ -10,12 +10,13 @@
 #define MODEL_OPENAI_GPT_DESCRIPTION                                           \
 	"GPT Model for answering pointed questions."
 
-#define GPT_API_URL "https://api.openai.com/v1/completions"
+#define GPT_API_URL "https://api.openai.com/v1/chat/completions"
 #define GPT_SUMMARY_PROMPT "Get summary of the following in 1 lines."
 #define GPT_AGG_PROMPT "Suggest a topic for the following."
 
 #define RESPONSE_JSON_CHOICE "choices"
-#define RESPONSE_JSON_KEY "text"
+#define RESPONSE_JSON_MESSAGE "message"
+#define RESPONSE_JSON_KEY "content"
 
 #define GPT_HELP INSIGHT_FUNCTIONS
 

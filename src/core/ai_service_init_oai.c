@@ -23,7 +23,7 @@ static int initialize_gpt(AIService *ai_service, char *model_name,
 	/* PgAi <-> REST functions */
 	ai_service->rest_transfer = gpt_rest_transfer;
 	ai_service->add_rest_headers = gpt_add_rest_headers;
-	ai_service->add_rest_data = gpt_add_rest_data;
+	ai_service->add_rest_data = gpt_add_rest_data_chat;
 
 	/* set the model name and description */
 	strcpy(model_name, MODEL_OPENAI_GPT_NAME);
